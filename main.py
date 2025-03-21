@@ -246,38 +246,40 @@ def load_config() -> Optional[AppConfig]:
         return None
 
 
-async def send_transcription_to_server(transcription_data: Dict, audio_file: UploadFile, id_value: str, manager_name: str) -> Dict:
-    """
-    Отправляет JSON с транскрипцией и аудиофайл на указанный сервер.
-    
-    :param transcription_data: Данные для отправки (JSON).
-    :param audio_file: Объект UploadFile с аудиофайлом.
-    :return: Ответ от сервера.
-    """
+async def send_transcription_to_server(
+    transcription_data: Dict,
+    audio_file: UploadFile,
+    id_value: str,
+    manager_name: str
+) -> Dict:
+    """Отправляет данные на внешний сервер"""
     try:
         endpoint_url = f"http://185.207.0.3:5000/transcribe/{id_value}"
-
         transcription_data["manager"] = manager_name
 
-        with tempfile.NamedTemporaryFile(delete=True) as temp_audio:
-            content = await audio_file.read()
-            temp_audio.write(content)
-            temp_audio.flush()
+        # Создаем FormData и добавляем поля
+        form_data = aiohttp.FormData()
+        
+        # Добавляем JSON-данные
+        form_data.add_field(
+            name="data",
+            value=json.dumps(transcription_data),
+            content_type="application/json"
+        )
+        
+        # Добавляем аудиофайл напрямую из UploadFile
+        form_data.add_field(
+            name="audio_file",
+            value=await audio_file.read(),
+            filename=audio_file.filename,
+            content_type=audio_file.content_type
+        )
 
-            form_data = aiohttp.FormData()
-            form_data.add_field("data", json.dumps(transcription_data), content_type="application/json")
-            form_data.add_field(
-                "audio_file",
-                open(temp_audio.name, "rb"),
-                filename=audio_file.filename,
-                content_type=audio_file.content_type
-            )
-
-            async with aiohttp.ClientSession() as session:
-                async with session.post(endpoint_url, data=form_data) as response:
-                    response.raise_for_status()
-                    return await response.json()
-                    
+        async with aiohttp.ClientSession() as session:
+            async with session.post(endpoint_url, data=form_data) as response:
+                response.raise_for_status()
+                return await response.json()
+                
     except aiohttp.ClientError as e:
         logger.error(f"Ошибка сети: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Ошибка сети: {str(e)}")
