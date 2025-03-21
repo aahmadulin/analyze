@@ -2,7 +2,7 @@ import aiohttp
 import asyncio
 import json
 import logging
-from datetime import datetime, UTC
+from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Optional
 from fastapi import FastAPI, File, UploadFile, HTTPException, Query, Body
