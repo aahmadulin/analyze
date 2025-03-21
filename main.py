@@ -322,7 +322,6 @@ async def analyze_dialog(
     file: UploadFile = File(...)
 ):
     """Анализ аудиозаписи с определением ролей и оценкой лида"""
-    logger.info(f"Начало анализа в {datetime.now(UTC)}")
     
     call_start_time = datetime.now(timezone.utc)
     
@@ -423,8 +422,7 @@ async def analyze_dialog(
     except Exception as e:
         logger.error(f"Критическая ошибка: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
-    finally:
-        logger.info(f"Завершение анализа в {datetime.now(UTC)}")
+
 
 
 if __name__ == "__main__":
