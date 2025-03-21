@@ -11,7 +11,6 @@ from openai import AsyncOpenAI
 from datetime import timezone
 import time 
 import random
-import tempfile
 from lead_analyzer import LeadAnalyzer
 from dialog_stage_classifier import DialogStageClassifier
 
