@@ -252,36 +252,36 @@ async def send_transcription_to_server(
     id_value: str, 
     manager_name: str
 ) -> Dict:
-    """Исправленная версия функции отправки"""
-    try:
-        endpoint_url = f"http://185.207.0.3:5000/transcribe/{id_value}"
-        transcription_data["manager"] = manager_name
+    """Отправляет данные на внешний сервер без обработки ошибок"""
+    endpoint_url = f"http://185.207.0.3:5000/transcribe/{id_value}"
+    transcription_data["manager"] = manager_name
 
-        # Сбрасываем позицию и читаем файл
-        await audio_file.seek(0)
-        file_content = await audio_file.read()
+    # Сбрасываем позицию файла перед чтением
+    await audio_file.seek(0)
+    file_content = await audio_file.read()
 
-        form_data = aiohttp.FormData()
-        form_data.add_field(
-            name="data",
-            value=json.dumps(transcription_data),
-            content_type="application/json"
-        )
-        form_data.add_field(
-            name="audio_file",
-            value=file_content,
-            filename=audio_file.filename,
-            content_type=audio_file.content_type
-        )
+    # Формируем FormData
+    form_data = aiohttp.FormData()
+    
+    # Добавляем JSON данные
+    form_data.add_field(
+        name="data",
+        value=json.dumps(transcription_data),
+        content_type="application/json"
+    )
+    
+    # Добавляем аудиофайл как байтовый поток
+    form_data.add_field(
+        name="audio_file",
+        value=file_content,
+        filename=audio_file.filename,
+        content_type=audio_file.content_type
+    )
 
-        async with aiohttp.ClientSession() as session:
-            async with session.post(endpoint_url, data=form_data) as response:
-                response.raise_for_status()
-                return await response.json()
-                
-    except Exception as e:
-        logger.error(f"Ошибка отправки: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Ошибка отправки: {str(e)}")
+    async with aiohttp.ClientSession() as session:
+        async with session.post(endpoint_url, data=form_data) as response:
+            response.raise_for_status()
+            return await response.json()
 
 async def analyze_parasite_words(manager_text: str, openai_key: str) -> str:
     """
