@@ -247,30 +247,29 @@ def load_config() -> Optional[AppConfig]:
 
 
 async def send_transcription_to_server(
-    transcription_data: Dict,
-    audio_file: UploadFile,
-    id_value: str,
+    transcription_data: Dict, 
+    audio_file: UploadFile, 
+    id_value: str, 
     manager_name: str
 ) -> Dict:
-    """Отправляет данные на внешний сервер"""
+    """Исправленная версия функции отправки"""
     try:
         endpoint_url = f"http://185.207.0.3:5000/transcribe/{id_value}"
         transcription_data["manager"] = manager_name
 
-        # Создаем FormData и добавляем поля
+        # Сбрасываем позицию и читаем файл
+        await audio_file.seek(0)
+        file_content = await audio_file.read()
+
         form_data = aiohttp.FormData()
-        
-        # Добавляем JSON-данные
         form_data.add_field(
             name="data",
             value=json.dumps(transcription_data),
             content_type="application/json"
         )
-        
-        # Добавляем аудиофайл напрямую из UploadFile
         form_data.add_field(
             name="audio_file",
-            value=await audio_file.read(),
+            value=file_content,
             filename=audio_file.filename,
             content_type=audio_file.content_type
         )
@@ -280,13 +279,9 @@ async def send_transcription_to_server(
                 response.raise_for_status()
                 return await response.json()
                 
-    except aiohttp.ClientError as e:
-        logger.error(f"Ошибка сети: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Ошибка сети: {str(e)}")
     except Exception as e:
         logger.error(f"Ошибка отправки: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Ошибка отправки: {str(e)}")
-
 
 async def analyze_parasite_words(manager_text: str, openai_key: str) -> str:
     """
